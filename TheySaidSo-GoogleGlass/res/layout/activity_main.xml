@@ -2,16 +2,16 @@
     xmlns:tools="http://schemas.android.com/tools"
     android:layout_width="match_parent"
     android:layout_height="match_parent"
-    android:background="#001133">
+    android:background="#001133" >
 
-    <TextView android:id="@+id/livecard_content"
+    <TextView
+        android:id="@+id/livecard_content"
         android:layout_width="match_parent"
         android:layout_height="match_parent"
+        android:gravity="left"
         android:keepScreenOn="true"
+        android:text="@string/hello_world"
         android:textColor="#88eafa"
-        android:textStyle="bold"
-        android:textSize="46sp"
-        android:gravity="center"
-        android:text="@string/hello_world" />
+        android:textSize="36sp" />
 
 </FrameLayout>
