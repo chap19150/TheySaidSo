@@ -4,5 +4,8 @@
     <item
         android:id="@+id/stop_menu_item"
         android:title="@string/stop"/>
+    <item
+        android:id="@+id/read_aloud_menu_item"
+        android:title="@string/read_aloud"/>
 
 </menu>

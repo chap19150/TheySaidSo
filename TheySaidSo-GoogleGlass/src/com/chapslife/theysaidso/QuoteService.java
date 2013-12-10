@@ -17,6 +17,7 @@ import android.content.Intent;
 import android.os.AsyncTask;
 import android.os.Binder;
 import android.os.IBinder;
+import android.speech.tts.TextToSpeech;
 import android.util.Log;
 import android.util.SparseArray;
 import android.widget.RemoteViews;
@@ -39,10 +40,13 @@ public class QuoteService extends Service {
     private static final String sCardId = "quote_service";
 
     private TimelineManager mTimelineManager;
-
+    private TextToSpeech mSpeech;
+    private SparseArray<String> mQuote;
+    
     private static final int SPARSE_QUOTE = 1;
     private static final int SPARSE_QUOTE_AUTHOR = 2;
     private static final int SPARSE_QUOTE_ID = 3;
+    private final LocalBinder mBinder = new LocalBinder();
     
     /*
      * (non-Javadoc)
@@ -51,7 +55,7 @@ public class QuoteService extends Service {
      */
     @Override
     public IBinder onBind(Intent arg0) {
-        return null;
+        return mBinder;
     }
 
     public class LocalBinder extends Binder {
@@ -64,6 +68,15 @@ public class QuoteService extends Service {
     public void onCreate() {
         super.onCreate();
         mTimelineManager = TimelineManager.from(this);
+     // Even though the text-to-speech engine is only used in response to a menu action, we
+        // initialize it when the application starts so that we avoid delays that could occur
+        // if we waited until it was needed to start it up.
+        mSpeech = new TextToSpeech(this, new TextToSpeech.OnInitListener() {
+            @Override
+            public void onInit(int status) {
+                // Do nothing.
+            }
+        });
     }
 
     @Override
@@ -164,14 +177,25 @@ public class QuoteService extends Service {
         }
         
         private SparseArray<String> parseJSON(JSONObject object){
-            SparseArray<String> quote = new SparseArray<String>();
             JSONObject contentsObject = object.optJSONObject("contents");
             if(contentsObject != null){
-                quote.put(SPARSE_QUOTE, contentsObject.optString("quote"));
-                quote.put(SPARSE_QUOTE_AUTHOR, contentsObject.optString("author"));
-                quote.put(SPARSE_QUOTE_ID, contentsObject.optString("id"));
+                mQuote = new SparseArray<String>();
+                mQuote.put(SPARSE_QUOTE, contentsObject.optString("quote"));
+                mQuote.put(SPARSE_QUOTE_AUTHOR, contentsObject.optString("author"));
+                mQuote.put(SPARSE_QUOTE_ID, contentsObject.optString("id"));
+                return mQuote;
             }
-            return quote;
+            return null;
+        }
+    }
+    
+    /**
+     * Read the current quote aloud using the text-to-speech engine.
+     */
+    public void readHeadingAloud() {
+        if(mQuote != null){
+            String quote = mQuote.get(SPARSE_QUOTE);
+            mSpeech.speak(quote, TextToSpeech.QUEUE_FLUSH, null);
         }
     }
 }
