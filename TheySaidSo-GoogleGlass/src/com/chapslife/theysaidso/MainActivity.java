@@ -5,7 +5,6 @@ package com.chapslife.theysaidso;
 
 import android.app.Activity;
 import android.content.ComponentName;
-import android.content.Context;
 import android.content.Intent;
 import android.content.ServiceConnection;
 import android.os.Bundle;
@@ -44,6 +43,12 @@ public class MainActivity extends Activity {
         }
     }
 
+    @Override
+    protected void onCreate(Bundle savedInstanceState) {
+        super.onCreate(savedInstanceState);
+        doStartService();
+    }
+    
     private void doStartService() {
         startService(new Intent(this, QuoteService.class));
     }
