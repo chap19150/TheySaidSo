@@ -3,13 +3,17 @@ package com.chapslife.theysaidso;
 import java.io.BufferedReader;
 import java.io.InputStream;
 import java.io.InputStreamReader;
+import java.util.Calendar;
 
 import org.apache.http.HttpResponse;
 import org.apache.http.client.HttpClient;
 import org.apache.http.client.methods.HttpGet;
 import org.apache.http.impl.client.DefaultHttpClient;
+import org.json.JSONArray;
+import org.json.JSONException;
 import org.json.JSONObject;
 
+import android.app.AlarmManager;
 import android.app.PendingIntent;
 import android.app.Service;
 import android.content.Context;
@@ -20,10 +24,8 @@ import android.os.IBinder;
 import android.speech.tts.TextToSpeech;
 import android.util.Log;
 import android.util.SparseArray;
-import android.widget.RemoteViews;
 
 import com.google.android.glass.app.Card;
-import com.google.android.glass.timeline.LiveCard;
 import com.google.android.glass.timeline.TimelineManager;
 
 /**
@@ -39,9 +41,10 @@ public class QuoteService extends Service {
 	private TextToSpeech mSpeech;
 	private SparseArray<String> mQuote;
 
-	private static final int SPARSE_QUOTE = 1;
-	private static final int SPARSE_QUOTE_AUTHOR = 2;
-	private static final int SPARSE_QUOTE_ID = 3;
+	private static final int SPARSE_BOOKNAME = 1;
+	private static final int SPARSE_CHAPTER = 2;
+	private static final int SPARSE_VERSE = 3;
+	private static final int SPARSE_TEXT = 4;
 	private final LocalBinder mBinder = new LocalBinder();
 	private Card mCard = null;
 	private long mCardId = -1;
@@ -66,6 +69,7 @@ public class QuoteService extends Service {
 	public void onCreate() {
 		super.onCreate();
 		mTimelineManager = TimelineManager.from(this);
+		
 		// Even though the text-to-speech engine is only used in response to a
 		// menu action, we
 		// initialize it when the application starts so that we avoid delays
@@ -77,51 +81,45 @@ public class QuoteService extends Service {
 				// Do nothing.
 			}
 		});
+		
 	}
 
 	@Override
 	public int onStartCommand(Intent intent, int flags, int startId) {
-		publishCard(this);
+		new FetchContent().execute();
 		return START_STICKY;
 	}
 
 	@Override
 	public void onDestroy() {
-		// unpublishCard(this);
 		super.onDestroy();
+		mSpeech.shutdown();
 	}
 
-	private void publishCard(Context context) {
-		Log.d(TAG, "publish card called");
-		if (mCard == null) {
-			mCard = new Card(this);
-			new FetchContent().execute();
-		} else {
-			return;
-		}
-	}
-
-	private void updateCard(Context context, SparseArray<String> quoteArray) {
+	private void publishCard(Context context, SparseArray<String> quoteArray) {
 		Log.d(TAG, "updateCard card called");
-		if (mCard == null) {
-			// Use the default content.
-			publishCard(context);
-		} else {
-			String quote = quoteArray.get(SPARSE_QUOTE);
-			String author = quoteArray.get(SPARSE_QUOTE_AUTHOR);
-			if (quote != null) {
-				mCard.setText(quote);
-				if (author != null) {
-					mCard.setFootnote(author);
-				}
-				mCardId = mTimelineManager.insert(mCard);
+		mCard = new Card(this);
+		String text = quoteArray.get(SPARSE_TEXT);
+		String bookname = quoteArray.get(SPARSE_BOOKNAME);
+		String chapter = quoteArray.get(SPARSE_CHAPTER);
+		String verse = quoteArray.get(SPARSE_VERSE);
+		
+		if (text != null) {
+			mCard.setText(text);
+			if (bookname != null && chapter != null && verse != null) {
+				mCard.setFootnote(bookname + " " + chapter + ":" + verse);
 			}
+			mCardId = mTimelineManager.insert(mCard);
+			Calendar cal = Calendar.getInstance();
+			
+			Intent intent = new Intent(this, QuoteService.class);
+			PendingIntent pintent = PendingIntent.getService(this, 0, intent, 0);
 
+			AlarmManager alarm = (AlarmManager)getSystemService(Context.ALARM_SERVICE);
+			// Start every 30 seconds
+			alarm.set(AlarmManager.RTC_WAKEUP, cal.getTimeInMillis() + AlarmManager.INTERVAL_DAY, pintent);
+			stopSelf();
 		}
-	}
-
-	private void unpublishCard(Context context) {
-
 	}
 
 	private class FetchContent extends
@@ -136,7 +134,7 @@ public class QuoteService extends Service {
 		protected SparseArray<String> doInBackground(Void... params) {
 			Log.d(TAG, "doInBackground called");
 			HttpClient client = new DefaultHttpClient();
-			HttpGet httpGet = new HttpGet("http://api.theysaidso.com/qod.json");
+			HttpGet httpGet = new HttpGet("http://labs.bible.org/api/?passage=random&type=json");
 			String response = "";
 			try {
 				HttpResponse execute = client.execute(httpGet);
@@ -149,7 +147,7 @@ public class QuoteService extends Service {
 					response += s;
 				}
 				Log.d(TAG, response);
-				return (parseJSON(new JSONObject(response)));
+				return (parseJSON(new JSONArray(response)));
 			} catch (Exception e) {
 				e.printStackTrace();
 			}
@@ -158,20 +156,28 @@ public class QuoteService extends Service {
 
 		protected void onPostExecute(SparseArray<String> result) {
 			if (result != null) {
-				updateCard(QuoteService.this, result);
+				publishCard(QuoteService.this, result);
 			}
 		}
 
-		private SparseArray<String> parseJSON(JSONObject object) {
-			JSONObject contentsObject = object.optJSONObject("contents");
-			if (contentsObject != null) {
-				mQuote = new SparseArray<String>();
-				mQuote.put(SPARSE_QUOTE, contentsObject.optString("quote"));
-				mQuote.put(SPARSE_QUOTE_AUTHOR,
-						contentsObject.optString("author"));
-				mQuote.put(SPARSE_QUOTE_ID, contentsObject.optString("id"));
-				return mQuote;
+		private SparseArray<String> parseJSON(JSONArray object) {
+			
+			try {
+				JSONObject contentsObject = object.getJSONObject(0);
+				if (object != null && contentsObject != null) {
+					mQuote = new SparseArray<String>();
+					mQuote.put(SPARSE_BOOKNAME, contentsObject.optString("bookname"));
+					mQuote.put(SPARSE_CHAPTER,
+							contentsObject.optString("chapter"));
+					mQuote.put(SPARSE_VERSE, contentsObject.optString("verse"));
+					mQuote.put(SPARSE_TEXT, contentsObject.optString("text"));
+					return mQuote;
+				}
+			} catch (JSONException e) {
+				// TODO Auto-generated catch block
+				e.printStackTrace();
 			}
+			
 			return null;
 		}
 	}
@@ -181,7 +187,7 @@ public class QuoteService extends Service {
 	 */
 	public void readHeadingAloud() {
 		if (mQuote != null) {
-			String quote = mQuote.get(SPARSE_QUOTE);
+			String quote = mQuote.get(SPARSE_TEXT);
 			mSpeech.speak(quote, TextToSpeech.QUEUE_FLUSH, null);
 		}
 	}
