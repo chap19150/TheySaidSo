@@ -117,7 +117,8 @@ public class GumballGameView extends View{
     /** array of gumballs so we can drop a random color */
     private static ArrayList<Integer> mGumballIds = new ArrayList<Integer>();
     private static Random mRandomGenerator = new Random();
-    
+    private static int mSize = 0;
+    private static int mMaxSize = 950;
 	public GumballGameView(Context context) {
         super(context);
         init();
@@ -145,6 +146,7 @@ public class GumballGameView extends View{
         if (mPipeSides == null) {
         	// set the bitmaps
             Resources res = getResources();
+            mSize = getWidth();
             mGumballBlue = getImageFromArray(res, R.drawable.gbg_gumball_blue_480, -360f, true, 1);
             mGumballRed = getImageFromArray(res, R.drawable.gbg_gumball_red_480, -360f, true, 1);
             mGumballYellow = getImageFromArray(res, R.drawable.gbg_gumball_yellow_480, -360f, true, 1);
@@ -298,6 +300,18 @@ public class GumballGameView extends View{
                         * position.y);
                 canvas.drawBitmap(bitmap, scale * (position.x), scale * (position.y), mPaint);
                 canvas.restore();
+                
+//                mPaint.setColor(Color.GREEN);
+//                while (fixture != null) {
+//                    EdgeShape edgeShape = (EdgeShape) fixture.getShape();
+//                    float x1 = edgeShape.m_vertex1.x + position.x;
+//                    float y1 = edgeShape.m_vertex1.y + position.y;
+//                    float x2 = edgeShape.m_vertex2.x + position.x;
+//                    float y2 = edgeShape.m_vertex2.y + position.y;
+//
+//                    canvas.drawLine(scale * x1, scale * y1, scale * x2, scale * y2, mPaint);
+//                    fixture = fixture.getNext();
+//                }
 
             }
 
@@ -342,6 +356,8 @@ public class GumballGameView extends View{
             } else {
                 // matrix.preScale(caneScale, 1);
             }
+            float scale = ((float) mSize) / mMaxSize;
+            matrix.postScale(scale, scale);
             
             bmp = Bitmap.createBitmap(bmp, 0, 0, (int) (bmp.getWidth() * caneScale),
                     bmp.getHeight(), matrix, true);
@@ -365,7 +381,7 @@ public class GumballGameView extends View{
      */
     public void addGumball(Gumball gumball) {
         gumball.mGumballColorId = getRandomColoredBitmapId();
-        mWorld.addGumball(gumball.mXInitPos, gumball.mYInitPos, gumball, 185.77f, 0.608f, 0.2f,
+        mWorld.addGumball(gumball.mXInitPos, gumball.mYInitPos, gumball, 185.77f, 0.258f, 0.2f,
                 0.8f, BodyType.DYNAMIC);
     }
 }

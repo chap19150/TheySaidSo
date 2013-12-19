@@ -230,9 +230,14 @@ public class PhysicsWorld {
     public void update() {
         // Update Physics World
         for (int i = 0; i < mBodiesToBeRemoved.size(); i++) {
-            mWorld.destroyBody(mBodiesToBeRemoved.get(i));
-            // addGumball(1f, 5f, TiltGameView.getRandomColoredBitmapId(),
-            // 185.77f, 0.258f, 0.2f, 0.3f, BodyType.DYNAMIC);
+            if(mBodiesToBeRemoved.get(i) != null){
+                try{
+                    mWorld.destroyBody(mBodiesToBeRemoved.get(i));
+                }catch(NullPointerException e){
+                    //TODO ??????
+                }
+                
+            }
         }
         mBodiesToBeRemoved.clear();
         mWorld.step(mFrameRate, 10, 10);

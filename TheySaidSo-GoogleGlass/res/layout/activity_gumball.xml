@@ -31,10 +31,10 @@
                 android:scaleType="fitXY"
                 android:src="@drawable/gbg_bg_main_inner" />
 
-            <com.chapslife.theysaidso.GumballGameView 
-                 android:id="@+id/gumballGameView" 
-                 android:layout_width="match_parent" 
-                 android:layout_height="match_parent" /> 
+            <com.chapslife.theysaidso.GumballGameView
+                android:id="@+id/gumballGameView"
+                android:layout_width="match_parent"
+                android:layout_height="match_parent" />
         </FrameLayout>
     </FrameLayout>
 
@@ -45,7 +45,7 @@
         android:layout_alignParentTop="true"
         android:scaleType="fitXY"
         android:src="@drawable/gbg_gumball_outlet" />
-<!-- 
+    <!--
     <com.google.android.santatracker.games.matching.CircleView
         android:id="@+id/tilt_end_level_circle"
         android:layout_width="wrap_content"
@@ -245,6 +245,7 @@
     <include layout="@layout/include_score_summary" />
 
     <include layout="@layout/include_instruction_image" />
+    -->
 
     <ImageView
         android:id="@+id/match_snowman"
@@ -253,6 +254,6 @@
         android:layout_alignParentBottom="true"
         android:layout_alignParentRight="true"
         android:src="@drawable/snowman"
-        android:visibility="gone" /> -->
+        android:visibility="gone" />
 
 </RelativeLayout>
